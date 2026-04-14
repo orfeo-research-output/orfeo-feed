@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Recente publicaties — Rijksarchief</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', Arial, sans-serif; font-size: 14px; color: #323130; background: white; padding: 16px; }
+  .section-label { font-size: 11px; font-weight: 600; color: #605e5c; text-transform: uppercase; letter-spacing: 0.06em; margin: 0 0 10px; padding-bottom: 8px; border-bottom: 2px solid #0078d4; }
+  .feed-item { padding: 10px 0; border-bottom: 0.5px solid #edebe9; }
+  .feed-item:last-child { border-bottom: none; }
+  .item-title { font-size: 13px; font-weight: 600; margin: 0 0 3px; }
+  .item-title a { color: #0078d4; text-decoration: none; }
+  .item-title a:hover { text-decoration: underline; }
+  .item-meta { font-size: 11px; color: #605e5c; }
+  .item-desc { font-size: 12px; color: #484644; margin-top: 3px; line-height: 1.5; }
+  .loading { font-size: 12px; color: #605e5c; padding: 8px 0; }
+  .error { font-size: 12px; color: #a4262c; padding: 8px 0; }
+  .meer-link { display: inline-block; margin-top: 10px; font-size: 12px; color: #0078d4; text-decoration: none; }
+  .meer-link:hover { text-decoration: underline; }
+</style>
+</head>
+<body>
+
+<p class="section-label">Recente publicaties — Rijksarchief</p>
+<div id="items"><p class="loading">Laden...</p></div>
+<a class="meer-link" href="https://orfeo.belnet.be/handle/internal/14" target="_blank">Alle publicaties bekijken →</a>
+
+<script>
+fetch('https://api.allorigins.win/get?url=' + encodeURIComponent('https://orfeo.belnet.be/feed/rss_2.0/internal/14'))
+  .then(function(r) { return r.json(); })
+  .then(function(j) {
+    var parser = new DOMParser();
+    var xml = parser.parseFromString(j.contents, 'text/xml');
+    var items = Array.from(xml.querySelectorAll('item')).slice(0, 8);
+    var html = '';
+    items.forEach(function(item) {
+      var title = item.querySelector('title') ? item.querySelector('title').textContent : '';
+      var link = item.querySelector('link') ? item.querySelector('link').textContent : '#';
+      var rawDate = item.querySelector('date, pubDate') ? item.querySelector('date, pubDate').textContent : '';
+      var desc = item.querySelector('description') ? item.querySelector('description').textContent.replace(/<[^>]+>/g, '').trim().slice(0, 140) : '';
+      var dateStr = '';
+      if (rawDate) {
+        try { dateStr = new Date(rawDate).toLocaleDateString('nl-BE', { day: 'numeric', month: 'long', year: 'numeric' }); }
+        catch(e) { dateStr = rawDate; }
+      }
+      html += '<div class="feed-item">';
+      html += '<p class="item-title"><a href="' + link + '" target="_blank">' + title + '</a></p>';
+      if (dateStr) html += '<p class="item-meta">' + dateStr + '</p>';
+      if (desc) html += '<p class="item-desc">' + desc + (desc.length >= 140 ? '…' : '') + '</p>';
+      html += '</div>';
+    });
+    document.getElementById('items').innerHTML = html || '<p class="error">Geen items gevonden.</p>';
+  })
+  .catch(function() {
+    document.getElementById('items').innerHTML = '<p class="error">Feed kon niet worden geladen. Probeer later opnieuw.</p>';
+  });
+</script>
+</body>
+</html>
